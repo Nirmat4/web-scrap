@@ -1,0 +1,43 @@
+Okey la función tiene una gran aceptación, es decir, tiene el comportamiento esperado y deseado.
+
+Ahora quiero que veas esta función, fue creado exclusivamente para la extracción de información de daños materiales, que corresponde al "card-1":
+
+def extraer_danios_materiales_2(driver):
+    """
+    Versión mejorada que maneja la estructura anidada compleja
+    """
+    try:
+        # Localizar el contenedor principal
+        contenedor_principal = WebDriverWait(driver, 20).until(
+            EC.presence_of_element_located((By.ID, "card-1"))
+        )
+
+        # Encontrar la sección específica de "Coberturas"
+        seccion_coberturas = WebDriverWait(contenedor_principal, 10).until(
+            lambda d: d.find_element(
+                By.XPATH,
+                ".//p[@class='subtitle mb-0' and contains(text(), 'Coberturas')]/ancestor::div[contains(@class, 'cont-servicios')]"
+            )
+        )
+
+        # Extraer todos los elementos de descripción dentro de la sección específica
+        coberturas = seccion_coberturas.find_elements(
+            By.XPATH,
+            ".//div[contains(@class, 'centrado')]/p[@class='description']"
+        )
+
+        # Procesar y filtrar resultados
+        lista_coberturas = []
+        for elemento in coberturas:
+            texto = elemento.text.strip()
+            if texto and texto not in lista_coberturas:
+                lista_coberturas.append(texto)
+
+        return lista_coberturas
+
+    except Exception as e:
+        print(f"[red]Error extrayendo coberturas: {str(e)}[/]")
+        driver.save_screenshot("error_coberturas.png")
+        return []
+
+Solo quiero que le des un gran análisis, no quiero sugerencias de mejora por el momento.

@@ -508,20 +508,29 @@ def open_modal(driver):
       pass
 
     return False
+  
+#╔═════════════════════════════════════════════════════════════════╗
+#║ Funcion de ejecucion principal para evitar llamadas prolongadas ║
+#║  ° Recibe toda la informacion para la ejecucion principal       ║
+#║  ° retorna el driver y deja el navegador listo para la          ║
+#║    extraccion principal de la informacion                       ║
+#╚═════════════════════════════════════════════════════════════════╝
+def init_browser(ano, modelo, genero, nacimiento, nombre, cp, email, telefono, ip=""):
+  driver=init_web(ip)
+  insert_year(driver, ano)
+  insert_model(driver, modelo)
+  select_model(driver, modelo)
+  click_continuar(driver)
+  select_gender(driver,genero)
+  insert_date(driver, nacimiento)
+  insert_personal_data(driver, nombre, cp, email, telefono)
+  click_cotizar(driver)
+  open_modal(driver)
+  return driver
 
 """
 Ejemplo de ejecución
-ip="51.81.245.3:17981"
-driver=init_web(ip)
-insert_year(driver, 2015)
-insert_model(driver, "AVEO LS A STD 1.6L 4CIL 4PTAS")
-select_model(driver, "AVEO LS A STD 1.6L 4CIL 4PTAS")
-click_continuar(driver)
-select_gender(driver,"Hombre")
-insert_date(driver, "16072002")
-insert_personal_data(driver, "Emilio", "52977", "foyagev912@ofular.com", "524385654784")
-click_cotizar(driver)
-open_modal(driver)
+init_browser(2015, "AVEO LS A STD 1.6L 4CIL 4PTAS", "Hombre", "16072002", "Emilio", "52977", "foyagev912@ofular.com", "524385654784", "51.81.245.3:17981")
 """
 
 #############################################################

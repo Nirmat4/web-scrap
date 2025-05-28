@@ -888,7 +888,7 @@ def extract_informacion(driver, aseguradoras):
       "precio": precio,
       "daños_materiales": data,
     }
-  return id_data, {f"{id_data}": total_data}
+  return id_data, total_data
 
 """
 Ejemplo de uso

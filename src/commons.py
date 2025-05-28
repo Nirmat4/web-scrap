@@ -4,8 +4,16 @@ import pandas as pd
 import glob
 import time
 import random
+import multiprocessing
+from webScraping import init_browser, extract_informacion, insert_auto, insert_data, get_aseguradoras
 
-# -- Buscar archivos Excel --
+#╔═══════════════════════════════════════════════════════════╗
+#║ Esta funcion extrae todos los excels que esten en la raiz ║
+#║ y seleccionamos uno para el data-set y si existe el de    ║
+#║ proxys lo llamamos tambien                                ║
+#║  ° Recupera todos los ".xlsx"                             ║
+#║  ° Busca el archivo "proxys" y lo retornamos si existe    ║
+#╚═══════════════════════════════════════════════════════════╝
 def buscar_archivos():
   dataset_df=None
   proxy_df=None
@@ -48,12 +56,20 @@ def buscar_archivos():
       print("[bold bright_green]Busqueda completada![/]")
       if dataset_df is not None:
         print("[bold bright_green]Data-set cargado")
+      else:
+        print("[bold red]No hay data-set[/]")
       if proxy_df is not None:
         print("[bold bright_green]Proxys cargado")
+      else:
+        print("[bold yellow]No hay proxys[/]")
     time.sleep(1)
     
     return dataset_df, proxy_df
 
+#╔═══════════════════════════════════════════════════════════════════╗
+#║ Esta funcion retorna un nombre aleatoreo para evitar seguimientos ║
+#║  ° Devuelve un nombre al azar                                     ║
+#╚═══════════════════════════════════════════════════════════════════╝
 def obtener_nombre_unisex():
   nombres_unisex=[
     'Alex', 'Taylor', 'Jordan', 'Casey', 'Jamie', 'Morgan', 'Riley', 
@@ -64,6 +80,10 @@ def obtener_nombre_unisex():
   ]
   return random.choice(nombres_unisex)
 
+#╔═══════════════════════════════════════════════════════════════════╗
+#║ Esta funcion cambia el formato de fecha "dd/mm/yyyy" a "ddmmmyyyy"║
+#║  ° Devuelve la fecha correcta                                     ║
+#╚═══════════════════════════════════════════════════════════════════╝
 def formatear_fecha(fecha_str):
   try:
     partes=fecha_str.split('/')
@@ -80,3 +100,89 @@ def formatear_fecha(fecha_str):
   except (ValueError, AttributeError, IndexError) as e:
     print(f"Error formateando fecha '{fecha_str}': {e}")
     return None 
+
+generos={
+  "FEMENINO": "Mujer",
+  "MASCULINO": "Hombre"
+}
+
+#╔═══════════════════════════════════════════════════════════╗
+#║ Esta funcion procesa todos los datos de un chunk de datos ║
+#║ y retorna los datos procesados en formato dict            ║
+#║  ° Recorremos todas las filas del chunk                   ║
+#║  ° Extraemos la informacion de autocompara                ║
+#╚═══════════════════════════════════════════════════════════╝
+def procesar_parcial(parte_df):
+  parcial_data=[]
+  # -- Iteramos en todos los elementos --
+  for idx, row in parte_df.iterrows():
+    modelo=row["Versión Autocompara "]
+    ano=int(row["Año Mod"])
+    genero=generos[row["Género"]]
+    nacimiento=formatear_fecha(str(row["Fecha Nacimiento"]))
+    nombre=obtener_nombre_unisex()
+    cp=str(row["CP"])
+    email="foyagev912@ofular.com"
+    telefono="524385654784"
+
+    # -- Hacemos las llamadas a las funciones --
+    driver=init_browser("")
+    try:
+      # -- Inicio de parametros en navegador y recuperacion de informacion --
+      insert_auto(driver, ano, modelo)
+      insert_data(driver, genero, nacimiento, nombre, cp, email, telefono)
+      aseguradoras=get_aseguradoras(driver)
+      id_data, data=extract_informacion(driver, aseguradoras)
+
+      row_dict=row.to_dict()
+
+      # -- Formacion final de los datos --
+      combinado={
+        id_data: {
+          **row_dict,
+          **data
+        }
+      }
+
+      parcial_data.append(combinado)
+
+    finally:
+      # -- Cerramos el navegador --
+      driver.quit()
+  
+  return parcial_data
+
+#╔══════════════════════════════════════════════════════════════════╗
+#║ Esta funcion recibe el data set y lo separa de forma automatica  ║
+#║ envia cada uno a un proceso diferente y ejecuta "n" solicitudes  ║
+#║ al mismo tiempo                                                  ║
+#║  ° Leemos el total de datos y segmentamos                        ║
+#║  ° Apilamos los impares o fuera de los chunks para tratarlos de  ║
+#║    forma secuencial                                              ║
+#║  ° Hacemos un marge de todos los datos procesados y los enviamos ║
+#╚══════════════════════════════════════════════════════════════════╝
+def procesamiento_paralelo(dataset_df, n_procesos):
+  total_size=len(dataset_df)
+  residuo=total_size % n_procesos
+  limite=total_size - residuo
+
+  # -- Dataset sin residuo --
+  dataset_limpio=dataset_df.iloc[:limite]
+  dataset_residuo=dataset_df.iloc[limite:]
+
+  # -- Dividir en partes iguales --
+  tamanio_parte=limite // n_procesos
+  particiones=[dataset_limpio.iloc[i*tamanio_parte:(i+1)*tamanio_parte] for i in range(n_procesos)]
+
+  with multiprocessing.Pool(processes=n_procesos) as pool:
+    resultados_parciales=pool.map(procesar_parcial, particiones)
+
+  # -- Aplanar los resultados --
+  total_data=[dato for sublista in resultados_parciales for dato in sublista]
+
+  # -- Procesar residuo secuencialmente --
+  if not dataset_residuo.empty:
+    resultado_residuo=procesar_parcial(dataset_residuo)
+    total_data.extend(resultado_residuo)
+
+  return total_data

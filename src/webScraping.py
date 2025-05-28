@@ -14,6 +14,7 @@ import re
 import time
 from rich import print
 import requests
+import uuid
 
 #╔══════════════════════════════════╗ 
 #║ Funciones y datos de uso general ║ 
@@ -515,18 +516,24 @@ def open_modal(driver):
 #║  ° retorna el driver y deja el navegador listo para la          ║
 #║    extraccion principal de la informacion                       ║
 #╚═════════════════════════════════════════════════════════════════╝
-def init_browser(ano, modelo, genero, nacimiento, nombre, cp, email, telefono, ip=""):
+def init_browser(ip=""):
   driver=init_web(ip)
+  return driver
+
+def insert_auto(driver, ano, modelo):
   insert_year(driver, ano)
   insert_model(driver, modelo)
   select_model(driver, modelo)
   click_continuar(driver)
+  return True
+
+def insert_data(driver, genero, nacimiento, nombre, cp, email, telefono):
   select_gender(driver,genero)
   insert_date(driver, nacimiento)
   insert_personal_data(driver, nombre, cp, email, telefono)
   click_cotizar(driver)
   open_modal(driver)
-  return driver
+  return True
 
 """
 Ejemplo de ejecución
@@ -862,14 +869,18 @@ def get_daños_materiales(driver):
 #║ Funcion para extraer informacion de daños por auto        ║
 #║  ° Extraccion individual de la informacion                ║
 #╚═══════════════════════════════════════════════════════════╝
-import uuid
+def get_aseguradoras(driver):
+  drop_options(driver)
+  aseguradoras=get_options(driver)
+  return aseguradoras
+
 def extract_informacion(driver, aseguradoras):
   id_data=str(uuid.uuid4())
   total_data={}
   for i, elemento in enumerate(aseguradoras):
     if i!=0:
       drop_options(driver)
-      select_gender(driver, elemento[0])
+      change_option(driver, elemento[0])
     precio=get_price(driver)
     expand_all(driver)
     data=get_daños_materiales(driver)

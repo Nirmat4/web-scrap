@@ -869,3 +869,8 @@ def extract_informacion(driver, aseguradoras):
       "daños_materiales": data,
     }
   return id_data, {f"{id_data}": total_data}
+
+"""
+Ejemplo de uso
+id_data, data=extract_informacion(driver, aseguradoras)
+"""

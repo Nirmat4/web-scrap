@@ -20,3 +20,10 @@ pip install -r requirements.txt
 cd src/
 python main.py
 ```
+
+## Actualizaciones
+En las proximas actualziaciones se planea un analizador automatico que entregue un PDF con analisis de la informacion, como los seguros mas costosos, los que tienen mas coberturas, o los que abarcan mas automoviles, incluso le papel que tiene el codigo postal (donde vivies) y el genero en los precios y coberturas de un seguro de auto.
+
+De la parte tecnica se anexara la funcionalidad de proxys ya que actualemnte dada la lista de proxys (no sirven) no se ha incluido la funcion la cual divide los drivers y evita el rastreo.
+
+Ademas de anexar fucniones para evitar errores y continuar con los procesos.

@@ -436,7 +436,7 @@ def click_cotizar(driver):
       ]))
     except:
       # -- Espera de respaldo --
-      time.sleep(10)
+      time.sleep(2)
       if "cotizacion" not in driver.current_url:
         raise TimeoutError("[bold red] la pagina no termino de cargar[/]")
     

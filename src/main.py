@@ -65,8 +65,8 @@ while (menu!="s"):
   # -- Procesamiento parcial de los elementos --
   if option.strip().lower()=="b":
     total_data=[]
-    n=input("Rango de alcanze (numero entero)")
-    df_slice=dataset_df.head(n)
+    n=input("Rango de alcanze (numero entero)\n")
+    df_slice=dataset_df.head(int(n))
     n_procesos=multiprocessing.cpu_count()
     with Status("[bold bright_green]Procesando datos en paralelo...", spinner="dots") as status:
         resultado_final=procesamiento_paralelo(df_slice, n_procesos)

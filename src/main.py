@@ -5,6 +5,7 @@ from commons import buscar_archivos, obtener_nombre_unisex, formatear_fecha, pro
 from tabulate import tabulate
 import multiprocessing
 import json
+import time
 
 # -- Datos para tablas de estructura --
 dataset_cols=[
@@ -80,6 +81,7 @@ while (menu!="s"):
 
   # -- Procesamiento de un unico dato --
   if option.strip().lower()=="c":
+    start_time=time.perf_counter()
     row=dataset_df.iloc[0]
     print(f"[bold cyan]{row}[/]")
     modelo=row["Versión Autocompara "]
@@ -92,7 +94,7 @@ while (menu!="s"):
     telefono="524385654784"
 
     # -- Inicio de parametros en navegador y recuperacion de informacion --
-    driver=init_browser("")
+    driver=init_browser(True)
     insert_auto(driver, ano, modelo)
     insert_data(driver, genero, nacimiento, nombre, cp, email, telefono)
     aseguradoras=get_aseguradoras(driver)
@@ -106,11 +108,19 @@ while (menu!="s"):
         **data
       }
     }
-
+    driver.execute_script("localStorage.clear(); sessionStorage.clear();")
+    driver.quit()
     # -- Escritura de datos --
     with open(f"./assets/{id_data}.json", "w") as file:
       json.dump(combinado, file, indent=2, ensure_ascii=False)
     print(combinado)
+
+    # -- Escritura de tiempo
+    end_time=time.perf_counter()
+    elapsed=end_time - start_time
+    minutes=int(elapsed // 60)
+    seconds=elapsed % 60
+    print(f"\n[bold green]Tiempo total de ejecución: {minutes} min {seconds:.2f} seg[/]")
 
     break
 

@@ -15,21 +15,97 @@ import time
 from rich import print
 import requests
 import uuid
+import os
+import zipfile
+
+#╔══════════════════════════════════════════════════════════╗
+#║ Funcion crear una extencion para poder recibir eñ proxy  ║
+#║ de forma iterativa.                                      ║
+#║  ° Crear la extencion                                    ║
+#║  ° Metemos en un zip la extencion para que la pueda leer ║
+#╚══════════════════════════════════════════════════════════╝
+def create_proxy_extension(username: str, password: str, host: str, port: int) -> str:
+  manifest_json = """
+  {
+      "version": "1.0.0",
+      "manifest_version": 2,
+      "name": "Proxy Authentication",
+      "permissions": ["proxy", "tabs", "unlimitedStorage", "storage", "webRequest", "webRequestBlocking", "<all_urls>"],
+      "background": {
+          "scripts": ["background.js"]
+      }
+  }
+  """
+
+  background_js = f"""
+  var config = {{
+      mode: "fixed_servers",
+      rules: {{
+          singleProxy: {{
+              scheme: "http",
+              host: "{host}",
+              port: parseInt({port})
+          }},
+          bypassList: []
+      }}
+  }};
+
+  chrome.proxy.settings.set({{value: config, scope: "regular"}}, function() {{}});
+
+  function callbackFn(details) {{
+      return {{
+          authCredentials: {{
+              username: "{username}",
+              password: "{password}"
+          }}
+      }};
+  }}
+
+  chrome.webRequest.onAuthRequired.addListener(
+      callbackFn,
+      {{urls: ["<all_urls>"]}},
+      ['blocking']
+  );
+  """
+
+  # -- Crear archivos temporales --
+  temp_dir = os.getcwd()
+  extension_dir = os.path.join(temp_dir, "proxy_auth_extension")
+  
+  os.makedirs(extension_dir, exist_ok=True)
+  
+  with open(os.path.join(extension_dir, "manifest.json"), "w") as f:
+    f.write(manifest_json)
+  
+  with open(os.path.join(extension_dir, "background.js"), "w") as f:
+    f.write(background_js)
+  
+  # -- Crear archivo ZIP --
+  zip_path = os.path.join(temp_dir, "proxy_auth_extension.zip")
+  with zipfile.ZipFile(zip_path, "w") as zp:
+    zp.write(os.path.join(extension_dir, "manifest.json"), "manifest.json")
+    zp.write(os.path.join(extension_dir, "background.js"), "background.js")
+  
+  return zip_path
 
 #╔══════════════════════════════════╗ 
 #║ Funciones y datos de uso general ║ 
 #╚══════════════════════════════════╝ 
 chrome_driver_path="/usr/local/bin/chromedriver"
-def test_proxy(proxy_ip):
-  # -- Verifica funcionalidad del proxy --
+def test_proxy(proxy_str: str) -> bool:
   try:
+    proxies = {
+      "http": proxy_str,
+      "https": proxy_str
+    }
     response = requests.get(
-      "http://httpbin.org/ip",
-      proxies={"http": proxy_ip, "https": proxy_ip},
-      timeout=10
+      "https://geo.brdtest.com/welcome.txt?product=dc&method=native",
+      proxies=proxies,
+      timeout=10,
+      verify=False
     )
-    return response.ok
-  except:
+    return "Welcome to Bright Data" in response.text
+  except Exception:
     return False
 
 #╔════════════════════════════════════════════════════════╗
@@ -38,50 +114,65 @@ def test_proxy(proxy_ip):
 #║  ° Navegamos a la pagina de "autocompara" de santander ║
 #║  ° Elimina el "div" de seguridad con id "sec-overlay"  ║
 #╚════════════════════════════════════════════════════════╝
-def init_web(ip: str):
+def init_web(use_proxy: bool = True):
   options = Options()
   
-  # -- User-Agent actualizado (Chrome 120+) --
+  # -- Configuracion de user agent --
   user_agent = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
   options.add_argument(f"user-agent={user_agent}")
   
-  # -- Configuración esencial --
+  # -- Configuracion esencial --
   options.add_argument("--disable-blink-features=AutomationControlled")
   options.add_experimental_option("excludeSwitches", ["enable-automation", "enable-logging"])
   options.add_argument("--no-sandbox")
   options.add_argument("--disable-dev-shm-usage")
   options.add_argument("--window-size=1366,768")
+  options.add_argument("--disable-gpu")
+  options.add_argument("--disable-infobars")
+  options.add_argument("--disable-extensions-except=proxy_auth_extension.zip")
+  options.add_argument("--load-extension=proxy_auth_extension.zip")
 
-  # -- Proxy (solo si pasa test) --
-  if ip and test_proxy(ip):
-    options.add_argument(f"--proxy-server={ip}")
-    print(f"[green]proxy activo: {ip}[/]")
+  # -- Configuracion de proxy --
+  if use_proxy:
+    # -- Credenciales de Bright Data --
+    proxy_user = "brd-customer-hl_dbcb7806-zone-test_scrap"
+    proxy_pass = "gk1x6bsjm4x9"
+    proxy_host = "brd.superproxy.io"
+    proxy_port = 33335
+    
+    # -- Crear extension de autenticacion --
+    extension_path = create_proxy_extension(
+      username=proxy_user,
+      password=proxy_pass,
+      host=proxy_host,
+      port=proxy_port
+    )
+    options.add_extension(extension_path)
+    print(f"[green]Proxy Bright Data configurado: {proxy_host}:{proxy_port}[/]")
   else:
-    print("[yellow]sin proxy[/]")
+    print("[yellow]Sin proxy[/]")
 
-  service=Service(executable_path=chrome_driver_path)
-  driver=webdriver.Chrome(service=service, options=options)
-  
+  service = Service(executable_path=chrome_driver_path)
+  driver = webdriver.Chrome(service=service, options=options)
+
   # -- Ocultar WebDriver --
   driver.execute_cdp_cmd("Page.addScriptToEvaluateOnNewDocument", {
     "source": """
-      Object.defineProperty(navigator, 'webdriver', {get: () => undefined});
-      window.chrome = {runtime: {}};
+        Object.defineProperty(navigator, 'webdriver', {get: () => undefined});
+        window.chrome = {runtime: {}};
     """
   })
 
   try:
     driver.get("https://www.autocompara.com")
-    # -- Esperar hasta que el título NO contenga palabras clave de bloqueo --
     WebDriverWait(driver, 20).until_not(lambda d: any(kw in d.title.lower() for kw in ["cloudflare", "security", "captcha"]))
-      
   except Exception as e:
-    print(f"[red]error navegación: {str(e)}[/]")
+    print(f"[red]Error en navegacion: {str(e)}[/]")
     driver.quit()
     return None
 
   try:
-    # -- eliminacion de overlay
+    # -- Eliminar overlay si existe --
     WebDriverWait(driver, 10).until(EC.visibility_of_element_located((By.ID, "sec-overlay")))
     driver.execute_script("document.getElementById('sec-overlay').remove()")
   except:
@@ -155,9 +246,9 @@ def insert_model(driver, texto: str):
     for char in texto:
       input_field.send_keys(char)
       time.sleep(random.uniform(0.1, 0.25))
-      current_value = input_field.get_attribute("value").upper()
+      current_value=input_field.get_attribute("value").upper()
       if char not in current_value:
-        raise ValueError(f"Carácter '{char}' no detectado. Valor actual: {current_value}")
+        raise ValueError(f"Caracter '{char}' no detectado. Valor actual: {current_value}")
       
     WebDriverWait(driver, 10).until(lambda d: texto in d.find_element(By.CSS_SELECTOR, "div.ng-input input").get_attribute("value").upper())
 
@@ -169,7 +260,7 @@ def insert_model(driver, texto: str):
     try:
       driver.execute_script("""
         document.querySelector('ng-select#search').click();
-        document.querySelector('ng-select#search input').value = arguments[0];
+        document.querySelector('ng-select#search input').value=arguments[0];
         document.querySelector('ng-select#search input').dispatchEvent(new Event('input'));
       """, texto)
       print(f"[bold yellow]usando fallback JS para: {texto}[/]")
@@ -188,7 +279,7 @@ def select_model(driver, texto: str):
     WebDriverWait(driver, 15).until(EC.visibility_of_element_located((By.CSS_SELECTOR, "ng-dropdown-panel[id^='a']")))
 
     # -- Localizamos el contenedor scrollable --
-    options = driver.find_elements(By.CSS_SELECTOR, "div.ng-option-child:not(.ng-optgroup)")
+    options=driver.find_elements(By.CSS_SELECTOR, "div.ng-option-child:not(.ng-optgroup)")
 
     # -- Buscamos la opcion deseada con scroll --
     find=False
@@ -208,7 +299,7 @@ def select_model(driver, texto: str):
         continue
     if not find:
       # -- Usamos una opcion default
-      print("[bold yellow]Opción no encontrada, usando alternativa...[/]")
+      print("[bold yellow]Opcion no encontrada, usando alternativa...[/]")
       options[0].click()
     return True
   except Exception as e:
@@ -324,7 +415,7 @@ def insert_date(driver, fecha: str):
     campo_fecha=WebDriverWait(driver, 10).until(EC.element_to_be_clickable((By.ID, "date")))
 
     # -- Limpieza de campo de valores basura --
-    driver.execute_script("arguments[0].value = '';", campo_fecha)
+    driver.execute_script("arguments[0].value='';", campo_fecha)
     campo_fecha.clear()
     time.sleep(0.5)
 
@@ -335,7 +426,7 @@ def insert_date(driver, fecha: str):
       if i in [2, 5]:
         if len(current_value) <= i or current_value[i] != "/":
           driver.save_screenshot(f"error_formato_{i}.png")
-          raise ValueError(f"[bold red]Formato inválido en posición {i+1}")
+          raise ValueError(f"[bold red]Formato invalido en posicion {i+1}")
       time.sleep(0.1)
 
     WebDriverWait(driver, 5).until(lambda d: d.find_element(By.ID, "date").get_attribute("value").replace("/", "") == fecha.replace("/", ""))
@@ -346,8 +437,8 @@ def insert_date(driver, fecha: str):
     # -- El plan B es usar JavaScript para forzar la entrada --
     driver.execute_script(
       """
-      const input = document.getElementById('date');
-      input.value = arguments[0];
+      const input=document.getElementById('date');
+      input.value=arguments[0];
       input.dispatchEvent(new Event('input', { bubbles: true }));
       input.dispatchEvent(new Event('change', { bubbles: true }));
       """,
@@ -436,9 +527,12 @@ def click_cotizar(driver):
       ]))
     except:
       # -- Espera de respaldo --
-      time.sleep(2)
+      time.sleep(3)
       if "cotizacion" not in driver.current_url:
         raise TimeoutError("[bold red] la pagina no termino de cargar[/]")
+      if "cotizacion-error" in driver.current_url:
+        print(f"[bold red]error con el envio de la informacion (hiciste demasiadas solicitudes con tu ip)[/]")
+        return False
     
     print("[bold cyan]pagina de resultados cargada exitosamente")
     return True
@@ -501,7 +595,7 @@ def open_modal(driver):
     # -- intentar cerrar overlays inesperados --
     try:
       driver.execute_script("""
-        const modals = document.querySelectorAll('div.modal-backdrop');
+        const modals=document.querySelectorAll('div.modal-backdrop');
         modals.forEach(modal => modal.remove());
         document.body.classList.remove('modal-open');
       """)
@@ -536,7 +630,7 @@ def insert_data(driver, genero, nacimiento, nombre, cp, email, telefono):
   return True
 
 """
-Ejemplo de ejecución
+Ejemplo de ejecucion
 init_browser(2015, "AVEO LS A STD 1.6L 4CIL 4PTAS", "Hombre", "16072002", "Emilio", "52977", "foyagev912@ofular.com", "524385654784", "51.81.245.3:17981")
 """
 
@@ -562,9 +656,9 @@ def drop_options(driver, intentos=3):
 
     # -- Scroll preciso y seguro (evitar rastreo) --
     driver.execute_script("""
-      const element = arguments[0];
-      const header = document.querySelector('header') || { offsetHeight: 0 };
-      const yOffset = -header.offsetHeight * 0.15;
+      const element=arguments[0];
+      const header=document.querySelector('header') || { offsetHeight: 0 };
+      const yOffset=-header.offsetHeight * 0.15;
       
       element.scrollIntoView({
           behavior: 'auto',
@@ -670,7 +764,7 @@ def change_option(driver, option_id: str):
           raise Exception("[bold red]no se pudo abrir el dropdown[/]")
     
     # -- Busqueda por xpath para navegadores que si lo soporten --
-    xpath_selector=f"//div[@role='option' and substring(@id, string-length(@id) - {len(partial_id)} + 1) = '{partial_id}']"
+    xpath_selector=f"//div[@role='option' and substring(@id, string-length(@id) - {len(partial_id)} + 1)='{partial_id}']"
     option=WebDriverWait(driver, 10).until(EC.element_to_be_clickable((By.XPATH, xpath_selector)))
 
     # -- Scroll al elemento --
@@ -810,7 +904,7 @@ def expand_all(driver, timeout=20, pause_between=0.5, retry_attempts=3):
 
         # -- Scroll y compensacion header --
         driver.execute_script(
-          "const header = document.querySelector('header') || { offsetHeight: 0 };"
+          "const header=document.querySelector('header') || { offsetHeight: 0 };"
           "arguments[0].scrollIntoView({behavior: 'auto', block: 'center'});"
           "window.scrollBy(0, -header.offsetHeight);",
           boton

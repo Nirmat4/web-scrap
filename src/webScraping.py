@@ -148,9 +148,9 @@ def init_web(use_proxy: bool = True):
       port=proxy_port
     )
     options.add_extension(extension_path)
-    print(f"[green]Proxy Bright Data configurado: {proxy_host}:{proxy_port}[/]")
+    print(f"[bold green]Proxy Bright Data configurado: {proxy_host}:{proxy_port}[/]")
   else:
-    print("[yellow]Sin proxy[/]")
+    print("[bold yellow]Sin proxy[/]")
 
   service = Service(executable_path=chrome_driver_path)
   driver = webdriver.Chrome(service=service, options=options)
@@ -167,7 +167,7 @@ def init_web(use_proxy: bool = True):
     driver.get("https://www.autocompara.com")
     WebDriverWait(driver, 20).until_not(lambda d: any(kw in d.title.lower() for kw in ["cloudflare", "security", "captcha"]))
   except Exception as e:
-    print(f"[red]Error en navegacion: {str(e)}[/]")
+    print(f"[bold red]Error en navegacion: {str(e)}[/]")
     driver.quit()
     return None
 

@@ -41,6 +41,9 @@ def buscar_archivos():
       try:
         status.update(f"[bold bright_green]Cargando dataset: {dataset_file}[/]")
         dataset_df=pd.read_excel(dataset_file)
+        status.update(f"[bold bright_green]Limpiando dataset: {dataset_file}[/]")
+        dataset_df=dataset_df[dataset_df['Versión Autocompara ']!='sin homologación']
+        dataset_df=dataset_df.drop('Unnamed: 2', axis=1)
       except Exception as e:
         status.update(f"[bold red]Error cargando dataset: {e}[/]")
     
@@ -62,6 +65,7 @@ def buscar_archivos():
         print("[bold bright_green]Proxys cargado")
       else:
         print("[bold yellow]No hay proxys[/]")
+
     time.sleep(1)
     
     return dataset_df, proxy_df
@@ -85,21 +89,29 @@ def obtener_nombre_unisex():
 #║  ° Devuelve la fecha correcta                                     ║
 #╚═══════════════════════════════════════════════════════════════════╝
 def formatear_fecha(fecha_str):
-  try:
+  # -- Formato "dd/mm/yyyy" --
+  if '/' in fecha_str:
     partes=fecha_str.split('/')
-    
-    if len(partes) != 3:
-      raise ValueError("Formato de fecha incorrecto")
-    
-    dia=partes[0].zfill(2)
-    mes=partes[1].zfill(2)
-    anio=partes[2]
-    
-    return f"{dia}{mes}{anio}"
+    if len(partes) == 3:
+      dia=partes[0].zfill(2)
+      mes=partes[1].zfill(2)
+      anio=partes[2]
+      return f"{dia}{mes}{anio}"
 
-  except (ValueError, AttributeError, IndexError) as e:
-    print(f"Error formateando fecha '{fecha_str}': {e}")
-    return None 
+  # -- Formato "yyyy-mm-dd hh:mm:ss" --
+  fecha_part=fecha_str.split()[0]
+  partes=fecha_part.split('-')
+  
+  if len(partes) == 3:
+    # -- Verificamos que el primer elemento sea un año (4 dígitos) --
+    if len(partes[0]) == 4:
+      anio=partes[0]
+      mes=partes[1].zfill(2)
+      dia=partes[2].zfill(2)
+      return f"{dia}{mes}{anio}"
+  
+  # -- Si ningún formato coincide, lanzamos error --
+  raise ValueError("Formato de fecha no reconocido. Use dd/mm/yyyy o yyyy-mm-dd [hh:mm:ss]")
 
 generos={
   "FEMENINO": "Mujer",
@@ -126,7 +138,7 @@ def procesar_parcial(parte_df):
     telefono="524385654784"
 
     # -- Hacemos las llamadas a las funciones --
-    driver=init_browser("")
+    driver=init_browser(True)
     try:
       # -- Inicio de parametros en navegador y recuperacion de informacion --
       insert_auto(driver, ano, modelo)
@@ -147,6 +159,7 @@ def procesar_parcial(parte_df):
       parcial_data.append(combinado)
 
     finally:
+      driver.execute_script("localStorage.clear(); sessionStorage.clear();")
       # -- Cerramos el navegador --
       driver.quit()
   

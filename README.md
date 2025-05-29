@@ -21,6 +21,13 @@ cd src/
 python main.py
 ```
 
+## Requerimientos
+Para la ejecución de este script hay que tenere una serie de requerimientos minimos para poder tener un funcionamiento correcto:
+ - Sistema operativo Linux (Debian/Ubuntu)
+    - Aun no se analiza la posibilidad de despliegue en Windows
+ - Python (de manera recomendable la version 3.11.12)
+ - Chromiun (es necesario este para un mejor control del driver)
+
 ## Actualizaciones
 En las proximas actualziaciones se planea un analizador automatico que entregue un PDF con analisis de la informacion, como los seguros mas costosos, los que tienen mas coberturas, o los que abarcan mas automoviles, incluso le papel que tiene el codigo postal (donde vivies) y el genero en los precios y coberturas de un seguro de auto.
 

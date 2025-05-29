@@ -7,16 +7,6 @@ El sistema tiene diversas fucniones, para tratar todos los datos al mismo timepo
 
 Los formatos de salida son JSON para un mejor manejo ya que los datos involucran coberturas y sulen se dispares para meter en un csv.
 
-```sql
-+----+-----------------+----------+
-| id | nombre          | país     |
-+----+-----------------+----------+
-| 1  | Juan Pérez      | México   |
-| 2  | María García    | España   |
-| 3  | Alex Smith      | USA      |
-+----+-----------------+----------+
-```
-
 ## Tecnologías
 El sistema hace uso de librerias de alto nivel como selenium o pandas, ademas de algunas librerias para poder darle foramto a la vista en terminal
 

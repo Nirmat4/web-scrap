@@ -138,7 +138,7 @@ def procesar_parcial(parte_df):
     telefono="524385654784"
 
     # -- Hacemos las llamadas a las funciones --
-    driver=init_browser(True)
+    driver=init_browser()
     try:
       # -- Inicio de parametros en navegador y recuperacion de informacion --
       insert_auto(driver, ano, modelo)

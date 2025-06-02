@@ -1,0 +1,313 @@
+{
+  "e098090b-912c-4d17-8436-fe97fc58d9f7": {
+    "Versión Autocompara ": "AVEO LS A STD 1.6L 4CIL 4PTAS",
+    "Id": 1,
+    "Carrocerías": "Chevrolet",
+    "Tipo": "AVEO",
+    "Desc": "AVEO A SEDAN STD 103HP 1.6L 4CIL 4P 5OCUP ",
+    "Año Mod": 2015,
+    "CP": 52977,
+    "Ciudad": "Atizapán de Zaragoza",
+    "Entidad": "México",
+    "Género": "FEMENINO",
+    "Edad": 49,
+    "Fecha Nacimiento": "1/1/1973",
+    "CHUBB": {
+      "precio": "6660.32",
+      "daños_materiales": [
+        "Colisiones, vuelcos y estrellamientos",
+        "Rotura de cristales",
+        "Incendio, rayo y explosión",
+        "Catástrofes naturales",
+        "Paros, mítines, huelgas o disturbios",
+        "Daños al transportar el vehículo asegurado",
+        "Penetración de agua al motor"
+      ],
+      "tiempo_robo": null,
+      "responsabilidad_civil": [
+        "Daños materiales a terceros",
+        "Asistencia Vial",
+        "Asistencia Legal",
+        "Te protege aún cuando manejes otro vehículo que no este asegurado y sea de similares características al amparado"
+      ],
+      "gastos_medicos": [
+        "Servicio de ambulancia",
+        "Atención médica",
+        "Hospitalización",
+        "Gastos de entierro",
+        "Enfermeros",
+        "Medicinas"
+      ]
+    },
+    "HDI": {
+      "precio": "7958.77",
+      "daños_materiales": [
+        "Colisiones, vuelcos y estrellamientos",
+        "Rotura de cristales",
+        "Incendio, rayo y explosión",
+        "Catástrofes naturales",
+        "Paros, mítines, huelgas o disturbios",
+        "Daños al transportar el vehículo asegurado",
+        "Penetración de agua al motor"
+      ],
+      "tiempo_robo": "2 días",
+      "responsabilidad_civil": [
+        "Daños materiales a terceros",
+        "Asistencia Vial",
+        "Asistencia Legal",
+        "Te protege aún cuando manejes otro vehículo que no este asegurado y sea de similares características al amparado"
+      ],
+      "gastos_medicos": [
+        "Servicio de ambulancia",
+        "Atención médica",
+        "Hospitalización",
+        "Gastos de entierro",
+        "Enfermeros",
+        "Medicinas"
+      ]
+    },
+    "ATLAS": {
+      "precio": "8025.99",
+      "daños_materiales": [
+        "Colisiones, vuelcos y estrellamientos",
+        "Rotura de cristales",
+        "Incendio, rayo y explosión",
+        "Catástrofes naturales",
+        "Paros, mítines, huelgas o disturbios",
+        "Daños al transportar el vehículo asegurado",
+        "Penetración de agua al motor"
+      ],
+      "tiempo_robo": "72 horas",
+      "responsabilidad_civil": [
+        "Daños materiales a terceros",
+        "Asistencia Vial",
+        "Asistencia Legal",
+        "Te protege aún cuando manejes otro vehículo que no este asegurado y sea de similares características al amparado"
+      ],
+      "gastos_medicos": [
+        "Servicio de ambulancia",
+        "Atención médica",
+        "Hospitalización",
+        "Gastos de entierro",
+        "Enfermeros",
+        "Medicinas"
+      ]
+    },
+    "ZURICH": {
+      "precio": "8076.57",
+      "daños_materiales": [
+        "Colisiones, vuelcos y estrellamientos",
+        "Rotura de cristales",
+        "Incendio, rayo y explosión",
+        "Catástrofes naturales",
+        "Paros, mítines, huelgas o disturbios",
+        "Daños al transportar el vehículo asegurado",
+        "Penetración de agua al motor"
+      ],
+      "tiempo_robo": "5 días",
+      "responsabilidad_civil": [
+        "Daños materiales a terceros",
+        "Asistencia Vial",
+        "Asistencia Legal",
+        "Te protege aún cuando manejes otro vehículo que no este asegurado y sea de similares características al amparado"
+      ],
+      "gastos_medicos": [
+        "Servicio de ambulancia",
+        "Atención médica",
+        "Hospitalización",
+        "Gastos de entierro",
+        "Enfermeros",
+        "Medicinas"
+      ]
+    },
+    "MAPFRE": {
+      "precio": "8778.67",
+      "daños_materiales": [
+        "Colisiones, vuelcos y estrellamientos",
+        "Rotura de cristales",
+        "Incendio, rayo y explosión",
+        "Catástrofes naturales",
+        "Paros, mítines, huelgas o disturbios",
+        "Daños al transportar el vehículo asegurado",
+        "Penetración de agua al motor"
+      ],
+      "tiempo_robo": null,
+      "responsabilidad_civil": [
+        "Daños materiales a terceros",
+        "Asistencia Vial",
+        "Asistencia Legal",
+        "Te protege aún cuando manejes otro vehículo que no este asegurado y sea de similares características al amparado"
+      ],
+      "gastos_medicos": [
+        "Servicio de ambulancia",
+        "Atención médica",
+        "Hospitalización",
+        "Gastos de entierro",
+        "Enfermeros",
+        "Medicinas"
+      ]
+    },
+    "GNP": {
+      "precio": "8944.56",
+      "daños_materiales": [
+        "Colisiones, vuelcos y estrellamientos",
+        "Rotura de cristales",
+        "Incendio, rayo y explosión",
+        "Catástrofes naturales",
+        "Paros, mítines, huelgas o disturbios",
+        "Daños al transportar el vehículo asegurado",
+        "Penetración de agua al motor"
+      ],
+      "tiempo_robo": "5 días",
+      "responsabilidad_civil": [
+        "Daños materiales a terceros",
+        "Asistencia Vial",
+        "Asistencia Legal",
+        "Te protege aún cuando manejes otro vehículo que no este asegurado y sea de similares características al amparado"
+      ],
+      "gastos_medicos": [
+        "Servicio de ambulancia",
+        "Atención médica",
+        "Hospitalización",
+        "Gastos de entierro",
+        "Enfermeros",
+        "Medicinas"
+      ]
+    },
+    "INBURSA": {
+      "precio": "9098.78",
+      "daños_materiales": [
+        "Colisiones, vuelcos y estrellamientos",
+        "Rotura de cristales",
+        "Incendio, rayo y explosión",
+        "Catástrofes naturales",
+        "Paros, mítines, huelgas o disturbios",
+        "Daños al transportar el vehículo asegurado",
+        "Penetración de agua al motor"
+      ],
+      "tiempo_robo": null,
+      "responsabilidad_civil": [
+        "Daños materiales a terceros",
+        "Asistencia Vial",
+        "Asistencia Legal",
+        "Te protege aún cuando manejes otro vehículo que no este asegurado y sea de similares características al amparado"
+      ],
+      "gastos_medicos": [
+        "Servicio de ambulancia",
+        "Atención médica",
+        "Hospitalización",
+        "Gastos de entierro",
+        "Enfermeros",
+        "Medicinas"
+      ]
+    },
+    "ANA": {
+      "precio": "9284.75",
+      "daños_materiales": [
+        "Colisiones, vuelcos y estrellamientos",
+        "Rotura de cristales",
+        "Incendio, rayo y explosión",
+        "Catástrofes naturales",
+        "Paros, mítines, huelgas o disturbios",
+        "Daños al transportar el vehículo asegurado",
+        "Penetración de agua al motor"
+      ],
+      "tiempo_robo": "72 horas",
+      "responsabilidad_civil": [
+        "Daños materiales a terceros",
+        "Asistencia Vial",
+        "Asistencia Legal",
+        "Te protege aún cuando manejes otro vehículo que no este asegurado y sea de similares características al amparado"
+      ],
+      "gastos_medicos": [
+        "Servicio de ambulancia",
+        "Atención médica",
+        "Hospitalización",
+        "Gastos de entierro",
+        "Enfermeros",
+        "Medicinas"
+      ]
+    },
+    "AIG": {
+      "precio": "9732.35",
+      "daños_materiales": [
+        "Colisiones, vuelcos y estrellamientos",
+        "Rotura de cristales",
+        "Incendio, rayo y explosión",
+        "Catástrofes naturales",
+        "Paros, mítines, huelgas o disturbios",
+        "Daños al transportar el vehículo asegurado",
+        "Penetración de agua al motor"
+      ],
+      "tiempo_robo": "72 horas",
+      "responsabilidad_civil": [
+        "Daños materiales a terceros",
+        "Asistencia Vial",
+        "Asistencia Legal",
+        "Te protege aún cuando manejes otro vehículo que no este asegurado y sea de similares características al amparado"
+      ],
+      "gastos_medicos": [
+        "Servicio de ambulancia",
+        "Atención médica",
+        "Hospitalización",
+        "Gastos de entierro",
+        "Enfermeros",
+        "Medicinas"
+      ]
+    },
+    "QUÁLITAS": {
+      "precio": "9927.00",
+      "daños_materiales": [
+        "Colisiones, vuelcos y estrellamientos",
+        "Rotura de cristales",
+        "Incendio, rayo y explosión",
+        "Catástrofes naturales",
+        "Paros, mítines, huelgas o disturbios",
+        "Daños al transportar el vehículo asegurado",
+        "Penetración de agua al motor"
+      ],
+      "tiempo_robo": "5 días",
+      "responsabilidad_civil": [
+        "Daños materiales a terceros",
+        "Asistencia Vial",
+        "Asistencia Legal",
+        "Te protege aún cuando manejes otro vehículo que no este asegurado y sea de similares características al amparado"
+      ],
+      "gastos_medicos": [
+        "Servicio de ambulancia",
+        "Atención médica",
+        "Hospitalización",
+        "Gastos de entierro",
+        "Enfermeros",
+        "Medicinas"
+      ]
+    },
+    "AXA": {
+      "precio": "15792.37",
+      "daños_materiales": [
+        "Colisiones, vuelcos y estrellamientos",
+        "Rotura de cristales",
+        "Incendio, rayo y explosión",
+        "Catástrofes naturales",
+        "Paros, mítines, huelgas o disturbios",
+        "Daños al transportar el vehículo asegurado",
+        "Penetración de agua al motor"
+      ],
+      "tiempo_robo": "72 horas",
+      "responsabilidad_civil": [
+        "Daños materiales a terceros",
+        "Asistencia Vial",
+        "Asistencia Legal",
+        "Te protege aún cuando manejes otro vehículo que no este asegurado y sea de similares características al amparado"
+      ],
+      "gastos_medicos": [
+        "Servicio de ambulancia",
+        "Atención médica",
+        "Hospitalización",
+        "Gastos de entierro",
+        "Enfermeros",
+        "Medicinas"
+      ]
+    }
+  }
+}

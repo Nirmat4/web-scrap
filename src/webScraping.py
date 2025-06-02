@@ -17,168 +17,155 @@ import requests
 import uuid
 import os
 import zipfile
-
-#╔══════════════════════════════════════════════════════════╗
-#║ Funcion crear una extencion para poder recibir eñ proxy  ║
-#║ de forma iterativa.                                      ║
-#║  ° Crear la extencion                                    ║
-#║  ° Metemos en un zip la extencion para que la pueda leer ║
-#╚══════════════════════════════════════════════════════════╝
-def create_proxy_extension(username: str, password: str, host: str, port: int) -> str:
-  manifest_json = """
-  {
-      "version": "1.0.0",
-      "manifest_version": 2,
-      "name": "Proxy Authentication",
-      "permissions": ["proxy", "tabs", "unlimitedStorage", "storage", "webRequest", "webRequestBlocking", "<all_urls>"],
-      "background": {
-          "scripts": ["background.js"]
-      }
-  }
-  """
-
-  background_js = f"""
-  var config = {{
-      mode: "fixed_servers",
-      rules: {{
-          singleProxy: {{
-              scheme: "http",
-              host: "{host}",
-              port: parseInt({port})
-          }},
-          bypassList: []
-      }}
-  }};
-
-  chrome.proxy.settings.set({{value: config, scope: "regular"}}, function() {{}});
-
-  function callbackFn(details) {{
-      return {{
-          authCredentials: {{
-              username: "{username}",
-              password: "{password}"
-          }}
-      }};
-  }}
-
-  chrome.webRequest.onAuthRequired.addListener(
-      callbackFn,
-      {{urls: ["<all_urls>"]}},
-      ['blocking']
-  );
-  """
-
-  # -- Crear archivos temporales --
-  temp_dir = os.getcwd()
-  extension_dir = os.path.join(temp_dir, "proxy_auth_extension")
-  
-  os.makedirs(extension_dir, exist_ok=True)
-  
-  with open(os.path.join(extension_dir, "manifest.json"), "w") as f:
-    f.write(manifest_json)
-  
-  with open(os.path.join(extension_dir, "background.js"), "w") as f:
-    f.write(background_js)
-  
-  # -- Crear archivo ZIP --
-  zip_path = os.path.join(temp_dir, "proxy_auth_extension.zip")
-  with zipfile.ZipFile(zip_path, "w") as zp:
-    zp.write(os.path.join(extension_dir, "manifest.json"), "manifest.json")
-    zp.write(os.path.join(extension_dir, "background.js"), "background.js")
-  
-  return zip_path
+import pandas as pd
+from openpyxl import Workbook
+from openpyxl.utils.dataframe import dataframe_to_rows
+import undetected_chromedriver as uc
 
 #╔══════════════════════════════════╗ 
-#║ Funciones y datos de uso general ║ 
+#║ Configuración de Bright Data     ║ 
 #╚══════════════════════════════════╝ 
-chrome_driver_path="/usr/local/bin/chromedriver"
-def test_proxy(proxy_str: str) -> bool:
-  try:
-    proxies = {
-      "http": proxy_str,
-      "https": proxy_str
+BRIGHTDATA_HOST = "brd.superproxy.io"
+BRIGHTDATA_PORT = 22225  # Usar puerto HTTP para evitar problemas con SSL
+BRIGHTDATA_USER = "brd-customer-hl_dbcb7806-zone-test_scrap"
+BRIGHTDATA_PASS = "gk1x6bsjm4x9"
+
+#╔══════════════════════════════════╗ 
+#║ Funciones mejoradas              ║ 
+#╚══════════════════════════════════╝ 
+def create_proxy_extension_v3(host, port, user, pwd, plugin_path=None):
+    import zipfile, json, random, string
+
+    if plugin_path is None:
+        rnd = "".join(random.choices(string.ascii_letters+string.digits, k=8))
+        plugin_path = f"./proxys/proxy_auth_plugin_{rnd}.zip"
+
+    manifest = {
+      "name": "Proxy Auth Extension",
+      "version": "1.0.0",
+      "manifest_version": 3,
+      "minimum_chrome_version": "108.0.0",
+      "permissions": [
+        "proxy",
+        "storage",
+        "unlimitedStorage",
+        "webRequest",
+        "webRequestAuthProvider"
+      ],
+      "host_permissions": ["<all_urls>"],
+      "background": {"service_worker": "background.js"}
     }
-    response = requests.get(
-      "https://geo.brdtest.com/welcome.txt?product=dc&method=native",
-      proxies=proxies,
-      timeout=10,
-      verify=False
-    )
-    return "Welcome to Bright Data" in response.text
-  except Exception:
-    return False
 
-#╔════════════════════════════════════════════════════════╗
-#║ Funcion para inicio de sesion en el navegador          ║
-#║  ° Inicia el navegador y su driver como controlador    ║
-#║  ° Navegamos a la pagina de "autocompara" de santander ║
-#║  ° Elimina el "div" de seguridad con id "sec-overlay"  ║
-#╚════════════════════════════════════════════════════════╝
-def init_web(use_proxy: bool = True):
-  options = Options()
-  
-  # -- Configuracion de user agent --
-  user_agent = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
-  options.add_argument(f"user-agent={user_agent}")
-  
-  # -- Configuracion esencial --
-  options.add_argument("--disable-blink-features=AutomationControlled")
-  options.add_experimental_option("excludeSwitches", ["enable-automation", "enable-logging"])
-  options.add_argument("--no-sandbox")
-  options.add_argument("--disable-dev-shm-usage")
-  options.add_argument("--window-size=1366,768")
-  options.add_argument("--disable-gpu")
-  options.add_argument("--disable-infobars")
-  options.add_argument("--disable-extensions-except=proxy_auth_extension.zip")
-  options.add_argument("--load-extension=proxy_auth_extension.zip")
+    background_js = f"""
+chrome.proxy.settings.set({{
+  value: {{
+    mode: "fixed_servers",
+    rules: {{
+      singleProxy: {{
+        scheme: "http",
+        host: "{host}",
+        port: parseInt({port})
+      }},
+      bypassList: ["<local>"]
+    }}
+  }},
+  scope: "regular"
+}}, function(){{}});
 
-  # -- Configuracion de proxy --
-  if use_proxy:
-    # -- Credenciales de Bright Data --
-    proxy_user = "brd-customer-hl_dbcb7806-zone-test_scrap"
-    proxy_pass = "gk1x6bsjm4x9"
-    proxy_host = "brd.superproxy.io"
-    proxy_port = 33335
+chrome.webRequest.onAuthRequired.addListener(
+  function(details) {{
+    return {{authCredentials: {{username: "{user}", password: "{pwd}"}}}};
+  }},
+  {{urls: ["<all_urls>"]}},
+  ["blocking"]
+);
+"""
+
+    with zipfile.ZipFile(plugin_path, 'w') as zp:
+        zp.writestr("manifest.json", json.dumps(manifest, indent=2))
+        zp.writestr("background.js", background_js)
+
+    return plugin_path
+
+#╔══════════════════════════════════╗ 
+#║ Función init_web modificada      ║ 
+#╚══════════════════════════════════╝ 
+def init_web():
+    options = uc.ChromeOptions()
     
-    # -- Crear extension de autenticacion --
-    extension_path = create_proxy_extension(
-      username=proxy_user,
-      password=proxy_pass,
-      host=proxy_host,
-      port=proxy_port
+    proxy_ext = create_proxy_extension_v3(
+        BRIGHTDATA_HOST, BRIGHTDATA_PORT,
+        BRIGHTDATA_USER, BRIGHTDATA_PASS
     )
-    options.add_extension(extension_path)
-    print(f"[bold green]Proxy Bright Data configurado: {proxy_host}:{proxy_port}[/]")
-  else:
-    print("[bold yellow]Sin proxy[/]")
+    options.add_extension(proxy_ext)
 
-  service = Service(executable_path=chrome_driver_path)
-  driver = webdriver.Chrome(service=service, options=options)
+    options.add_argument("--no-sandbox")
+    options.add_argument("--disable-dev-shm-usage")
+    options.add_argument("--window-size=1366,768")
+    options.add_argument("--disable-blink-features=AutomationControlled")
 
-  # -- Ocultar WebDriver --
-  driver.execute_cdp_cmd("Page.addScriptToEvaluateOnNewDocument", {
-    "source": """
-        Object.defineProperty(navigator, 'webdriver', {get: () => undefined});
-        window.chrome = {runtime: {}};
-    """
-  })
+    user_agent = (
+        "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
+        "AppleWebKit/537.36 (KHTML, like Gecko) "
+        "Chrome/114.0.5735.199 Safari/537.36"
+    )
+    options.add_argument(f"user-agent={user_agent}")
 
-  try:
-    driver.get("https://www.autocompara.com")
-    WebDriverWait(driver, 20).until_not(lambda d: any(kw in d.title.lower() for kw in ["cloudflare", "security", "captcha"]))
-  except Exception as e:
-    print(f"[bold red]Error en navegacion: {str(e)}[/]")
-    driver.quit()
-    return None
+    driver = uc.Chrome(options=options, use_subprocess=True)
 
-  try:
-    # -- Eliminar overlay si existe --
-    WebDriverWait(driver, 10).until(EC.visibility_of_element_located((By.ID, "sec-overlay")))
-    driver.execute_script("document.getElementById('sec-overlay').remove()")
-  except:
-    pass
+    driver.execute_cdp_cmd("Page.addScriptToEvaluateOnNewDocument", {
+        "source": """
+            Object.defineProperty(navigator, 'webdriver', {get: () => undefined});
+            window.chrome = {runtime: {}};
+            Object.defineProperty(navigator, 'permissions', {
+                get: () => ({
+                    query: (parameters) => (
+                        parameters.name === 'notifications' ?
+                        Promise.resolve({ state: Notification.permission }) :
+                        Promise.resolve({ state: 'denied' })
+                    )
+                }),
+            });
+        """
+    })
 
-  return driver
+    try:
+        driver.get("https://www.autocompara.com")
+        WebDriverWait(driver, 20).until_not(
+            lambda d: any(kw in d.title.lower() for kw in ["cloudflare", "captcha", "error"])
+        )# tras cargar la página y antes de rellenar...
+        csrf = None
+        for cookie in driver.get_cookies():
+            if cookie['name'] in ('XSRF-TOKEN','sec_cpt'):
+                csrf = cookie['value']
+                break
+        print("CSRF token:", csrf)
+        if csrf:
+          driver.execute_cdp_cmd("Network.enable", {})
+          driver.execute_cdp_cmd(
+              "Network.setExtraHTTPHeaders",
+              {"headers": {
+                  "X-XSRF-TOKEN": csrf,
+                  "Referer": "https://www.autocompara.com/",
+                  # (o "If-Match": etag) si ese fuera el caso
+              }}
+          )
+
+    except Exception as e:
+        print(f"[red]Error durante navegación: {e}[/]")
+        driver.quit()
+        return None
+
+    try:
+        WebDriverWait(driver, 10).until(EC.visibility_of_element_located((By.ID, "sec-overlay")))
+        driver.execute_script("document.getElementById('sec-overlay').remove()")
+        print("[green]Overlay de seguridad eliminado[/]")
+    except Exception as e:
+        print(f"[yellow]No se pudo eliminar overlay: {str(e)}[/]")
+
+    return driver
+
+
 
 #╔════════════════════════════════════════════════════════╗
 #║ Funcion para insertar el año del auto                  ║
@@ -489,7 +476,7 @@ def insert_personal_data(driver, nombre: str, codigo_p: str, email: str, telefon
       # -- Simulacion de escritura humana --
       for char in config["valor"]:
         elemento.send_keys(char)
-        time.sleep(0.05)
+       me.sleep(0.05) ti
 
     print("[bold cyan]todos los campos llenados correctamente")
     return True
@@ -610,8 +597,8 @@ def open_modal(driver):
 #║  ° retorna el driver y deja el navegador listo para la          ║
 #║    extraccion principal de la informacion                       ║
 #╚═════════════════════════════════════════════════════════════════╝
-def init_browser(ip=""):
-  driver=init_web(ip)
+def init_browser():
+  driver=init_web()
   return driver
 
 def insert_auto(driver, ano, modelo):
@@ -959,6 +946,248 @@ def get_daños_materiales(driver):
     driver.save_screenshot("error_coberturas.png")
     return []
   
+def extraer_tiempo_pago_robo(driver):
+  try:
+    seccion_tiempo_pago=WebDriverWait(driver, 20).until(
+      EC.presence_of_element_located((
+        By.XPATH,
+        "//p[@class='subtitle mb-0' and contains(text(), 'Tiempo de pago de indemnización')]"
+        "/ancestor::div[contains(@class, 'cont-servicios')]"
+      ))
+    )
+    
+    tiempo_pago=seccion_tiempo_pago.find_element(
+      By.XPATH,
+      ".//p[@class='description']"
+    ).text.strip()
+    
+    return tiempo_pago
+  
+  except Exception as e:
+    
+    return None
+  
+
+def extraer_extension_responsabilidad_civil(driver):
+  try:
+    WebDriverWait(driver, 15).until(
+      EC.visibility_of_element_located((
+        By.XPATH, 
+        "//p[contains(@class, 'subtitle') and contains(text(), 'Extensión de Responsabilidad Civil')]"
+      ))
+    )
+    
+    columna_contenido=driver.find_element(
+      By.XPATH,
+      "//p[@class='subtitle mb-0' and contains(text(), 'Extensión de Responsabilidad Civil')]"
+      "/ancestor::div[contains(@class, 'cont-servicios')]"
+      "//div[contains(@class, 'col-5')]"
+    )
+    
+    elementos=columna_contenido.find_elements(By.XPATH, ".//p[@class='description']")
+    
+    return list({elem.text.strip() for elem in elementos if elem.text.strip()})
+      
+  except TimeoutException:
+    print("[yellow]Sección de Responsabilidad Civil no encontrada - puede que no esté presente[/]")
+    return []
+  except NoSuchElementException:
+    print("[yellow]Elementos específicos no encontrados en la sección[/]")
+    return []
+  except Exception as e:
+    print(f"[red]Error inesperado: {str(e)}[/]")
+    driver.save_screenshot("error_inesperado_responsabilidad.png")
+    return []
+    
+def extraer_gastos_medicos(driver):
+  try:
+    seccion_gastos_medicos=WebDriverWait(driver, 20).until(
+      EC.presence_of_element_located((
+        By.XPATH,
+        "//div[contains(@class, 'cont-servicios') and .//div[contains(@class, 'd-flex justify-content-center') and .//p[text()='Coberturas']]]"
+      ))
+    )
+    
+    coberturas=seccion_gastos_medicos.find_elements(
+      By.XPATH,
+      ".//div[contains(@class, 'col-5')]//p[@class='description']"
+    )
+    
+    lista_coberturas=[elemento.text.strip() for elemento in coberturas if elemento.text.strip()]
+    return list(set(lista_coberturas))
+  
+  except Exception as e:
+      print(f"[red]Error extrayendo gastos médicos: {str(e)}[/]")
+      driver.save_screenshot("error_gastos_medicos.png")
+      return []
+    
+
+
+def json_to_excel(json_data, output_file):
+  cotizacion_id=list(json_data.keys())[0]
+  datos_generales=json_data[cotizacion_id]
+  
+  wb=Workbook()
+  
+  if 'ws' in wb.sheetnames:
+      ws_general=wb['ws']
+      wb.remove(ws_general)
+  ws_general=wb.create_sheet("Detalles Generales")
+  
+  general_data={
+    "ID": [cotizacion_id],
+    "Versión Autocompara": [datos_generales["Versión Autocompara "]],
+    "Carrocerías": [datos_generales["Carrocerías"]],
+    "Tipo": [datos_generales["Tipo"]],
+    "Descripción": [datos_generales["Desc"]],
+    "Año Modelo": [datos_generales["Año Mod"]],
+    "CP": [datos_generales["CP"]],
+    "Ciudad": [datos_generales["Ciudad"]],
+    "Entidad": [datos_generales["Entidad"]],
+    "Género": [datos_generales["Género"]],
+    "Edad": [datos_generales["Edad"]],
+    "Fecha Nacimiento": [datos_generales["Fecha Nacimiento"]],
+  }
+  
+  aseguradoras=["CHUBB", "HDI", "ATLAS", "ZURICH", "MAPFRE", "GNP", "INBURSA", "ANA", "AIG", "QUÁLITAS", "AXA"]
+  
+  for aseguradora in aseguradoras:
+    if aseguradora in datos_generales:
+      precio=datos_generales[aseguradora]["precio"]
+      general_data[aseguradora]=[float(precio)]
+    else:
+      general_data[aseguradora]=[None]
+  
+  df_general=pd.DataFrame(general_data)
+  for r_idx, row in enumerate(dataframe_to_rows(df_general, index=False, header=True), 1):
+    ws_general.append(row)
+  
+  for cell in ws_general[1]:
+    cell.font=cell.font.copy(bold=True)
+  
+  ws_resumen=wb.create_sheet("Resumen Coberturas")
+  
+  resumen_data=[]
+  for aseguradora in aseguradoras:
+    if aseguradora in datos_generales:
+      datos_aseguradora=datos_generales[aseguradora]
+      resumen_data.append({
+        "ID": cotizacion_id,
+        "Aseguradora": aseguradora,
+        "daños_materiales": len(datos_aseguradora["daños_materiales"]),
+        "responsabilidad_civil": len(datos_aseguradora["responsabilidad_civil"]),
+        "gastos_medicos": len(datos_aseguradora["gastos_medicos"]),
+        "tiempo_robo": datos_aseguradora["tiempo_robo"] if datos_aseguradora["tiempo_robo"] else None
+      })
+  
+  df_resumen=pd.DataFrame(resumen_data)
+  for r_idx, row in enumerate(dataframe_to_rows(df_resumen, index=False, header=True), 1):
+    ws_resumen.append(row)
+  
+  for cell in ws_resumen[1]:
+    cell.font=cell.font.copy(bold=True)
+  
+  ws_danios=wb.create_sheet("Daños Materiales")
+  
+  danios_data=[]
+  for aseguradora in aseguradoras:
+    if aseguradora in datos_generales:
+      danios=datos_generales[aseguradora]["daños_materiales"]
+      for cobertura in danios:
+        danios_data.append({
+          "ID": cotizacion_id,
+          "Aseguradora": aseguradora,
+          "Cobertura": cobertura
+        })
+  
+  df_danios=pd.DataFrame(danios_data)
+  for r_idx, row in enumerate(dataframe_to_rows(df_danios, index=False, header=True), 1):
+    ws_danios.append(row)
+  
+  for cell in ws_danios[1]:
+    cell.font=cell.font.copy(bold=True)
+  
+  ws_robo=wb.create_sheet("Tiempo Robo")
+  
+  robo_data=[]
+  for aseguradora in aseguradoras:
+    if aseguradora in datos_generales:
+      tiempo=datos_generales[aseguradora]["tiempo_robo"]
+      robo_data.append({
+        "ID": cotizacion_id,
+        "Aseguradora": aseguradora,
+        "Tiempo Robo": tiempo if tiempo else "No especificado"
+      })
+  
+  df_robo=pd.DataFrame(robo_data)
+  for r_idx, row in enumerate(dataframe_to_rows(df_robo, index=False, header=True), 1):
+    ws_robo.append(row)
+  
+  for cell in ws_robo[1]:
+    cell.font=cell.font.copy(bold=True)
+  
+  ws_responsabilidad=wb.create_sheet("Responsabilidad Civil")
+  
+  responsabilidad_data=[]
+  for aseguradora in aseguradoras:
+    if aseguradora in datos_generales:
+      coberturas=datos_generales[aseguradora]["responsabilidad_civil"]
+      for cobertura in coberturas:
+        responsabilidad_data.append({
+          "ID": cotizacion_id,
+          "Aseguradora": aseguradora,
+          "Cobertura": cobertura
+        })
+  
+  df_responsabilidad=pd.DataFrame(responsabilidad_data)
+  for r_idx, row in enumerate(dataframe_to_rows(df_responsabilidad, index=False, header=True), 1):
+    ws_responsabilidad.append(row)
+  
+  for cell in ws_responsabilidad[1]:
+    cell.font=cell.font.copy(bold=True)
+  
+  ws_gastos=wb.create_sheet("Gastos Médicos")
+  
+  gastos_data=[]
+  for aseguradora in aseguradoras:
+    if aseguradora in datos_generales:
+      coberturas=datos_generales[aseguradora]["gastos_medicos"]
+      for cobertura in coberturas:
+        gastos_data.append({
+          "ID": cotizacion_id,
+          "Aseguradora": aseguradora,
+          "Cobertura": cobertura
+        })
+  
+  df_gastos=pd.DataFrame(gastos_data)
+  for r_idx, row in enumerate(dataframe_to_rows(df_gastos, index=False, header=True), 1):
+    ws_gastos.append(row)
+  
+  for cell in ws_gastos[1]:
+    cell.font=cell.font.copy(bold=True)
+  
+  if "Sheet" in wb.sheetnames:
+    wb.remove(wb["Sheet"])
+  
+  def autoajustar_columnas(ws):
+    for column in ws.columns:
+      max_length=0
+      column_letter=column[0].column_letter
+      for cell in column:
+        try:
+          if len(str(cell.value)) > max_length:
+            max_length=len(str(cell.value))
+        except:
+          pass
+      adjusted_width=(max_length + 2)
+      ws.column_dimensions[column_letter].width=adjusted_width
+  
+  for sheet in wb.sheetnames:
+    autoajustar_columnas(wb[sheet])
+  
+  wb.save(output_file)
+  return output_file
+
 #╔═══════════════════════════════════════════════════════════╗
 #║ Funcion para extraer informacion de daños por auto        ║
 #║  ° Extraccion individual de la informacion                ║
@@ -981,6 +1210,9 @@ def extract_informacion(driver, aseguradoras):
     total_data[elemento[1]]={
       "precio": precio,
       "daños_materiales": data,
+      "tiempo_robo": extraer_tiempo_pago_robo(driver),
+      "responsabilidad_civil": extraer_extension_responsabilidad_civil(driver),
+      "gastos_medicos": extraer_gastos_medicos(driver)
     }
   return id_data, total_data
 

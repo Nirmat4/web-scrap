@@ -1,10 +1,11 @@
-from webScraping import init_browser, extract_informacion, insert_auto, insert_data, get_aseguradoras
+from webScraping import init_browser, extract_informacion, insert_auto, insert_data, get_aseguradoras, json_to_excel
 from rich import print
 from rich.status import Status
 from commons import buscar_archivos, obtener_nombre_unisex, formatear_fecha, procesamiento_paralelo, generos
 from tabulate import tabulate
 import multiprocessing
 import json
+from selenium.webdriver.support.ui import WebDriverWait
 import time
 
 # -- Datos para tablas de estructura --
@@ -94,7 +95,7 @@ while (menu!="s"):
     telefono="524385654784"
 
     # -- Inicio de parametros en navegador y recuperacion de informacion --
-    driver=init_browser(True)
+    driver=init_browser()
     insert_auto(driver, ano, modelo)
     insert_data(driver, genero, nacimiento, nombre, cp, email, telefono)
     aseguradoras=get_aseguradoras(driver)
@@ -114,12 +115,86 @@ while (menu!="s"):
     with open(f"./assets/{id_data}.json", "w") as file:
       json.dump(combinado, file, indent=2, ensure_ascii=False)
     print(combinado)
+    archivo_excel = json_to_excel(combinado, "./assets/reporte_seguros.xlsx")
+    print(f"[bold green]Archivo Excel generado: {archivo_excel}[/]")
 
     # -- Escritura de tiempo
     end_time=time.perf_counter()
     elapsed=end_time - start_time
     minutes=int(elapsed // 60)
     seconds=elapsed % 60
+    print(f"\n[bold green]Tiempo total de ejecución: {minutes} min {seconds:.2f} seg[/]")
+
+    break
+
+  # -- Procesamiento de un unico dato --
+  if option.strip().lower()=="x":
+    start_time=time.perf_counter()
+    total_data=[]
+    # 1) Arrancamos el navegador UNA vez
+    driver = init_browser()
+    try:
+      for i in range(len(dataset_df)):
+        row = dataset_df.iloc[i]
+        print(f"[bold cyan]Procesando fila {i+1}/{len(dataset_df)}: {row.to_dict()}[/]")
+
+        # 2) Navegar al punto de partida (por ejemplo, la página de cotización)
+        driver.get("https://www.autocompara.com")  
+        WebDriverWait(driver, 20).until_not(
+            lambda d: any(kw in d.title.lower() for kw in ["cloudflare","security","captcha"])
+        )
+
+        # 3) Extraer parámetros de la fila
+        modelo    = row["Versión Autocompara "]
+        ano       = int(row["Año Mod"])
+        genero    = generos[row["Género"]]
+        nacimiento= formatear_fecha(str(row["Fecha Nacimiento"]))
+        nombre    = obtener_nombre_unisex()
+        cp        = str(row["CP"])
+        email     = "foyagev912@ofular.com"
+        telefono  = "524385654784"
+
+        # 4) Ejecutar tu flujo de inserción y extracción
+        insert_auto(driver, ano, modelo)
+        insert_data(driver, genero, nacimiento, nombre, cp, email, telefono)
+        aseguradoras    = get_aseguradoras(driver)
+        id_data, data   = extract_informacion(driver, aseguradoras)
+        row_dict        = row.to_dict()
+
+        combinado = {
+          id_data: {
+            **row_dict,
+            **data
+          }
+        }
+        total_data.append(combinado)
+
+        # 5) Limpiar sólo el estado de la página, SIN cerrar el navegador
+        driver.execute_script("localStorage.clear(); sessionStorage.clear();")
+        driver.delete_all_cookies()
+
+        # 6) Pausa entre iteraciones para no saturar
+        time.sleep(60)
+
+    finally:
+      # 7) Al acabar todas las filas, cerramos el navegador
+      driver.quit()
+
+    # 8) Guardar resultados
+    for registro in total_data:
+      for id_data, contenido in registro.items():
+        with open(f"./assets/{id_data}.json", "w") as f:
+          json.dump(contenido, f, indent=2, ensure_ascii=False)
+
+    # (si quieres un sólo Excel con todo:)
+    archivo_excel = json_to_excel(total_data, "./assets/reporte_seguros.xlsx")
+    print(f"[bold green]Archivo Excel generado: {archivo_excel}[/]")
+
+    # 9) Informe de tiempo
+    end_time = time.perf_counter()
+    elapsed  = end_time - start_time
+    minutes  = int(elapsed // 60)
+    seconds  = elapsed % 60
     print(f"\n[bold green]Tiempo total de ejecución: {minutes} min {seconds:.2f} seg[/]")
 
     break
